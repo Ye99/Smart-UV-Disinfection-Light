@@ -1,9 +1,12 @@
 import machine, time
 from machine import Pin
+from micropython import const
 
 __version__ = '0.1.0'
 __author__ = 'Roberto Sánchez'
 __license__ = "Apache License 2.0. https://www.apache.org/licenses/LICENSE-2.0"
+
+_default_echo_timeout_us = const(30000)
 
 class HCSR04:
     """
@@ -14,8 +17,8 @@ class HCSR04:
 
     """
     # Timeout is based in chip range limit (400cm)
-    TIMEOUT_US = 500*2*30
-    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=HCSR04.TIMEOUT_US):
+    # TIMEOUT_US = 500*2*30
+    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=_default_echo_timeout_us):
         """
         trigger_pin: Output pin to send pulses
         echo_pin: Readonly pin to measure the distance. The pin should be protected with 1k resistor
