@@ -1,3 +1,4 @@
+# Notice this library use inversed logic level, to work with N-Channel MOSFET driver in front of the distance sensor.
 import machine, time
 from machine import Pin
 from micropython import const
@@ -28,7 +29,7 @@ class HCSR04:
         self.echo_timeout_us = echo_timeout_us
         # Init trigger pin (out)
         self.trigger = Pin(trigger_pin, mode=Pin.OUT, pull=None)
-        self.trigger.off()
+        self.trigger.on()
 
         # Init echo pin (in)
         self.echo = Pin(echo_pin, mode=Pin.IN, pull=None)
@@ -38,12 +39,12 @@ class HCSR04:
         Send the pulse to trigger and listen on echo pin.
         We use the method `machine.time_pulse_us()` to get the microseconds until the echo is received.
         """
-        self.trigger.off() # Stabilize the sensor
+        self.trigger.on() # Stabilize the sensor
         time.sleep_us(5)
-        self.trigger.on()
+        self.trigger.off()
         # Send a 10us pulse.
         time.sleep_us(10)
-        self.trigger.off()
+        self.trigger.on()
         try:
             pulse_time = machine.time_pulse_us(self.echo, 1, self.echo_timeout_us)
             return pulse_time
@@ -59,7 +60,7 @@ class HCSR04:
         pulse_time = self._send_pulse_and_wait()
 
         # To calculate the distance we get the pulse_time and divide it by 2
-        # (the pulse walk the distance twice) and by 29.1 becasue
+        # (the pulse walk the distance twice) and by 29.1 because
         # the sound speed on air (343.2 m/s), that It's equivalent to
         # 0.34320 mm/us that is 1mm each 2.91us
         # pulse_time // 2 // 2.91 -> pulse_time // 5.82 -> pulse_time * 100 // 582
