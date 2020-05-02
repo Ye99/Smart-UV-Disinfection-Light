@@ -64,12 +64,15 @@ sensor = HCSR04(trigger_pin=14, echo_pin=12)
 
 start_ticks = 0
 
+_loop_sleep_ms = const(200)
+_led_on_distance_cm = const(40)
+
 while True:
     try:
         distance = sensor.distance_cm()
         print('Distance:', distance, 'cm')
 
-        if distance < 40 and uv_light.value() == 0:
+        if distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
             turn_on_UV_light()
         if ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
@@ -77,6 +80,6 @@ while True:
 
         measure_UV_light_current()
 
-        sleep_ms(50)
+        sleep_ms(_loop_sleep_ms)
     except OSError as ex:
         print('ERROR getting distance:', ex)
