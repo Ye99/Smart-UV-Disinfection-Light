@@ -87,7 +87,7 @@ sensor = HCSR04(trigger_pin=14, echo_pin=12)
 
 start_ticks = 0
 
-_loop_sleep_ms = const(80)
+_loop_sleep_ms = const(10)
 _led_on_distance_cm = const(73)  # 29 inch
 
 # For testing average function.
