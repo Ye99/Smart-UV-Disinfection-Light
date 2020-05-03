@@ -1,32 +1,34 @@
-from hcsr04 import HCSR04
 from time import sleep_ms, ticks_ms, ticks_diff
-from machine import Pin, ADC
+
+from machine import Pin, ADC, reset
 from micropython import const
+
+from hcsr04 import HCSR04
 from umqtt.simple import MQTTClient
 
 _led_light_on_milliseconds = const(30000)
-_led_light_current_to_voltage_resiter_value = const(47)
+_led_light_current_to_voltage_resistor_value = const(47)
 
 # Wiring:
 # D7 UV light switch. High == on.
 uv_light = Pin(13, Pin.OUT)
 
 
-def turn_on_UV_light() -> None:
+def turn_on_uv_light() -> None:
     uv_light.on()
 
 
-def turn_off_UV_light() -> None:
+def turn_off_uv_light() -> None:
     uv_light.off()
 
 
-turn_off_UV_light()
+turn_off_uv_light()
 
 # A0 UV light current (47 Ohm resister converts current to voltage) measurement.
 uv_light_voltage = ADC(0)  # value 0, 1024 corresponding to 0. 3.3V
 
 
-def map_ADC_reading_to_voltage(value, left_min, left_max, right_min, right_max) -> float:
+def map_adc_reading_to_voltage(value, left_min, left_max, right_min, right_max) -> float:
     # Figure out how 'wide' each range is
     left_span = left_max - left_min
     right_span = right_max - right_min
@@ -44,13 +46,13 @@ _ADC_voltage_low_range = const(0)
 _ADC_voltage_high_range = 3.3
 
 
-def measure_UV_light_current() -> float:
-    current_ma = map_ADC_reading_to_voltage(uv_light_voltage.read(),
+def measure_uv_light_current() -> float:
+    current_ma = map_adc_reading_to_voltage(uv_light_voltage.read(),
                                             _ADC_reading_low_range,
                                             _ADC__reading_high_range,
                                             _ADC_voltage_low_range,
                                             _ADC_voltage_high_range) / \
-                 _led_light_current_to_voltage_resiter_value * 1000
+                 _led_light_current_to_voltage_resistor_value * 1000
     print('UV light current is {} mA'.format(current_ma))
     return current_ma
 
@@ -95,6 +97,19 @@ def publish_message(message) -> None:  # message is in binary format
         print('Connect to MQTT server failed. ')
 
 
+last_reset_tick = ticks_ms()
+_reset_interval_milliseconds = const(60 * 1000)  # 30 minutes
+
+
+def periodically_reset() -> None:
+    if ticks_diff(ticks_ms(), last_reset_tick) > _reset_interval_milliseconds:
+        message = 'Periodically reset.'
+        print(message)
+        publish_message(message)
+        reset()
+        #  Don't need to record last_reset_tick here. Because after reset, code will do it.
+
+
 # ESP32 Devkit print Dxx, the xx is pin number used below.
 # ESP8266 map Dxx to GPIO number https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 # D5 Trigger (reversed logic, low -> high because of the MOSFET driver in front of distance sensor.
@@ -125,15 +140,15 @@ while True:
 
         if average_distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
-            turn_on_UV_light()
+            turn_on_uv_light()
             publish_message('Turn light on. Average distance {}. '
-                            'Light current is {} mA. '.format(average_distance, measure_UV_light_current()))
+                            'Light current is {} mA. '.format(average_distance, measure_uv_light_current()))
         if 1 == uv_light.value() and ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
-            publish_message('Before turning light off. Current is {} mA.'.format(measure_UV_light_current()))
-            turn_off_UV_light()
-            publish_message('Light is off. Current is {} mA.'.format(measure_UV_light_current()))
+            publish_message('Before turning light off. Current is {} mA.'.format(measure_uv_light_current()))
+            turn_off_uv_light()
+            publish_message('Light is off. Current is {} mA.'.format(measure_uv_light_current()))
 
-        measure_UV_light_current()
+        measure_uv_light_current()
 
         sleep_ms(_loop_sleep_ms)
     except OSError as ex:
