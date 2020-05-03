@@ -47,6 +47,7 @@ _ADC__reading_high_range = const(1024)
 _ADC_voltage_low_range = const(0)
 _ADC_voltage_high_range = 3.3
 
+
 def measure_UV_light_current() -> float:
     current_ma = map_ADC_reading_to_voltage(uv_light_voltage.read(),
                                             _ADC_reading_low_range,
@@ -58,21 +59,53 @@ def measure_UV_light_current() -> float:
     return current_ma
 
 
+_last_x_distance_values = []
+_track_distance_value_number = const(5)
+
+
+def compute_average(values_list) -> float:
+    assert len(values_list) > 0, "doesn't make sense to compute empty list average"
+    print('values_list length is {}'.format(len(values_list)))
+    if len(values_list) > 0:
+        average = sum(values_list) / len(values_list)
+        return average
+    else:
+        return 0
+
+
+# Sometime the ultrasonic sensor returns readings much shorter than true value. Track the last x values and
+# use their average to filter out such noise.
+def update_distance_average(new_measure) -> float:
+    if len(_last_x_distance_values) > _track_distance_value_number:
+        _last_x_distance_values.pop(0)
+    _last_x_distance_values.append(new_measure)
+    return compute_average(_last_x_distance_values)
+
 # ESP32 Devkit print Dxx, the xx is pin number used below.
 # ESP8266 map Dxx to GPIO number https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 sensor = HCSR04(trigger_pin=14, echo_pin=12)
 
 start_ticks = 0
 
-_loop_sleep_ms = const(200)
-_led_on_distance_cm = const(40)
+_loop_sleep_ms = const(80)
+_led_on_distance_cm = const(73)  # 29 inch
+
+# For testing average function.
+# import urandom
 
 while True:
     try:
-        distance = sensor.distance_cm()
-        print('Distance:', distance, 'cm')
+        distance_reading = sensor.distance_cm()
+        # distance_reading = urandom.getrandbits(8)
+        print('The last distance reading is {} cm.'.format(distance_reading))
+        if distance_reading <= 0:
+            print('Drop negative or zero distance.')
+            continue
 
-        if distance < _led_on_distance_cm and uv_light.value() == 0:
+        average_distance = update_distance_average(distance_reading)
+        print('Current average distance is {} cm.'.format(average_distance))
+
+        if average_distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
             turn_on_UV_light()
         if ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
@@ -82,4 +115,4 @@ while True:
 
         sleep_ms(_loop_sleep_ms)
     except OSError as ex:
-        print('ERROR getting distance:', ex)
+        print('ERROR:', ex)
