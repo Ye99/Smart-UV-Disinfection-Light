@@ -2,6 +2,7 @@ from hcsr04 import HCSR04
 from time import sleep_ms, ticks_ms, ticks_diff
 from machine import Pin, ADC
 from micropython import const
+from umqtt.simple import MQTTClient
 
 _led_light_on_milliseconds = const(30000)
 _led_light_current_to_voltage_resiter_value = const(47)
@@ -126,7 +127,7 @@ while True:
             start_ticks = ticks_ms()
             turn_on_UV_light()
             publish_message('Turn light on.')
-        if ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
+        if 1 == uv_light.value() and ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
             turn_off_UV_light()
             publish_message('Turn light off.')
 
