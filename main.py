@@ -22,7 +22,6 @@ def turn_off_UV_light() -> None:
 
 turn_off_UV_light()
 
-
 # A0 UV light current (47 Ohm resister converts current to voltage) measurement.
 uv_light_voltage = ADC(0)  # value 0, 1024 corresponding to 0. 3.3V
 
@@ -57,7 +56,7 @@ def measure_UV_light_current() -> float:
 
 
 _last_x_distance_values = []
-_track_distance_value_number = const(5)
+_track_distance_value_number = const(8)
 
 
 def compute_average(values_list) -> float:
@@ -82,14 +81,14 @@ def update_distance_average(new_measure) -> float:
 # Only call this method called when WiFi is connected.
 # See https://docs.micropython.org/en/latest/esp8266/tutorial/network_basics.html#configuration-of-the-wifi
 # ESP8266/32 persist WiFi configuration during power-off, and will reconnect automatically.
-def publish_message(message) -> None: # message is in binary format
+def publish_message(message) -> None:  # message is in binary format
     print('Publish message {0}'.format(message))
-    c = MQTTClient(client_id="smart_uv_light_umqtt_client", # if username/pwd wrong, this will throw Exception
-                   server="192.168.1.194", # don't catch "fail fast fail hard".
+    c = MQTTClient(client_id="smart_uv_light_umqtt_client",  # if username/pwd wrong, this will throw Exception
+                   server="192.168.1.194",  # don't catch "fail fast fail hard".
                    user=b"mosquitto",
                    password=b"mosquitto",
                    ssl=False)
-    if 0 == c.connect(): # 0 is success.
+    if 0 == c.connect():  # 0 is success.
         c.publish(b"smart_uv_light_status_topic", message)
         c.disconnect()
     else:
@@ -105,7 +104,7 @@ sensor = HCSR04(trigger_pin=14, echo_pin=12)
 
 start_ticks = 0
 
-_loop_sleep_ms = const(10)
+_loop_sleep_ms = const(6)
 _led_on_distance_cm = const(73)  # 29 inch
 
 # For testing average function.
@@ -116,8 +115,9 @@ while True:
         distance_reading = sensor.distance_cm()
         # distance_reading = urandom.getrandbits(8)
         print('The last distance reading is {} cm.'.format(distance_reading))
-        if distance_reading <= 0:
-            print('Drop negative or zero distance.')
+        if distance_reading <= 2:
+            # It can give negative readings. Hardware bug or library bug?
+            print('Drop value below the Ultrasonic lower range.')
             continue
 
         average_distance = update_distance_average(distance_reading)
@@ -126,10 +126,12 @@ while True:
         if average_distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
             turn_on_UV_light()
-            publish_message('Turn light on.')
+            publish_message('Turn light on. Average distance {}. '
+                            'Light current is {} mA. '.format(average_distance, measure_UV_light_current()))
         if 1 == uv_light.value() and ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
+            publish_message('Before turning light off. Current is {} mA.'.format(measure_UV_light_current()))
             turn_off_UV_light()
-            publish_message('Turn light off.')
+            publish_message('Light is off. Current is {} mA.'.format(measure_UV_light_current()))
 
         measure_UV_light_current()
 
