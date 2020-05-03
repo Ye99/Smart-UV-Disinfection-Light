@@ -21,10 +21,6 @@ def turn_off_UV_light() -> None:
 
 turn_off_UV_light()
 
-# D5 Trigger (reversed logic, low -> high because of the MOSFET driver in front of distance sensor.
-# HCSR04 library needs to be modified)
-# D6 Echo
-
 
 # A0 UV light current (47 Ohm resister converts current to voltage) measurement.
 uv_light_voltage = ADC(0)  # value 0, 1024 corresponding to 0. 3.3V
@@ -81,8 +77,12 @@ def update_distance_average(new_measure) -> float:
     _last_x_distance_values.append(new_measure)
     return compute_average(_last_x_distance_values)
 
+
 # ESP32 Devkit print Dxx, the xx is pin number used below.
 # ESP8266 map Dxx to GPIO number https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
+# D5 Trigger (reversed logic, low -> high because of the MOSFET driver in front of distance sensor.
+# HCSR04 library needs to be modified)
+# D6 Echo
 sensor = HCSR04(trigger_pin=14, echo_pin=12)
 
 start_ticks = 0
