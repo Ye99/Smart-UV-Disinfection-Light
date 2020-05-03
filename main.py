@@ -78,6 +78,23 @@ def update_distance_average(new_measure) -> float:
     return compute_average(_last_x_distance_values)
 
 
+# Only call this method called when WiFi is connected.
+# See https://docs.micropython.org/en/latest/esp8266/tutorial/network_basics.html#configuration-of-the-wifi
+# ESP8266/32 persist WiFi configuration during power-off, and will reconnect automatically.
+def publish_message(message) -> None: # message is in binary format
+    print('Publish message {0}'.format(message))
+    c = MQTTClient(client_id="smart_uv_light_umqtt_client", # if username/pwd wrong, this will throw Exception
+                   server="192.168.1.194", # don't catch "fail fast fail hard".
+                   user=b"mosquitto",
+                   password=b"mosquitto",
+                   ssl=False)
+    if 0 == c.connect(): # 0 is success.
+        c.publish(b"smart_uv_light_status_topic", message)
+        c.disconnect()
+    else:
+        print('Connect to MQTT server failed. ')
+
+
 # ESP32 Devkit print Dxx, the xx is pin number used below.
 # ESP8266 map Dxx to GPIO number https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 # D5 Trigger (reversed logic, low -> high because of the MOSFET driver in front of distance sensor.
@@ -108,8 +125,10 @@ while True:
         if average_distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
             turn_on_UV_light()
+            publish_message('Turn light on.')
         if ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
             turn_off_UV_light()
+            publish_message('Turn light off.')
 
         measure_UV_light_current()
 
