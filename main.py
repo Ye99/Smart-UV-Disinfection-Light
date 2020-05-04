@@ -53,7 +53,7 @@ def measure_uv_light_current() -> float:
                                             _ADC_voltage_low_range,
                                             _ADC_voltage_high_range) / \
                  _led_light_current_to_voltage_resistor_value * 1000
-    print('UV light current is {} mA'.format(current_ma))
+    # print('UV light current is {} mA'.format(current_ma))
     return current_ma
 
 
@@ -63,7 +63,7 @@ _track_distance_value_number = const(8)
 
 def compute_average(values_list) -> float:
     assert len(values_list) > 0, "doesn't make sense to compute empty list average"
-    print('values_list length is {}'.format(len(values_list)))
+    # print('values_list length is {}'.format(len(values_list)))
     if len(values_list) > 0:
         average = sum(values_list) / len(values_list)
         return average
@@ -98,14 +98,19 @@ def publish_message(message) -> None:  # message is in binary format
 
 
 last_reset_tick = ticks_ms()
-_reset_interval_milliseconds = const(60 * 1000)  # 30 minutes
+_reset_interval_milliseconds = const(60 * 1000 * 30)  # 30 minutes
 
 
 def periodically_reset() -> None:
-    if ticks_diff(ticks_ms(), last_reset_tick) > _reset_interval_milliseconds:
-        message = 'Periodically reset.'
-        publish_message(message)
-        print(message)
+    tick_ms_elapsed = ticks_diff(ticks_ms(), last_reset_tick)
+    # message = 'tick_ms elapsed {}'.format(tick_ms_elapsed)
+    # publish_message(message)
+    # print(message)
+
+    if tick_ms_elapsed > _reset_interval_milliseconds:
+        print('reset...')
+        publish_message('reset...')  # Also works as heartbeat.
+        sleep_ms(2000)
         reset()
         #  Don't need to record last_reset_tick here. Because after reset, code will do it.
 
@@ -129,14 +134,14 @@ while True:
     try:
         distance_reading = sensor.distance_cm()
         # distance_reading = urandom.getrandbits(8)
-        print('The last distance reading is {} cm.'.format(distance_reading))
+        # print('The last distance reading is {} cm.'.format(distance_reading))
         if distance_reading <= 2:
             # It can give negative readings. Hardware bug or library bug?
-            print('Drop value below the Ultrasonic lower range.')
+            # print('Drop value below the Ultrasonic lower range.')
             continue
 
         average_distance = update_distance_average(distance_reading)
-        print('Current average distance is {} cm.'.format(average_distance))
+        # print('Current average distance is {} cm.'.format(average_distance))
 
         if average_distance < _led_on_distance_cm and uv_light.value() == 0:
             start_ticks = ticks_ms()
@@ -144,7 +149,7 @@ while True:
             publish_message('Turn light on. Average distance {}. '
                             'Light current is {} mA. '.format(average_distance, measure_uv_light_current()))
         if 1 == uv_light.value() and ticks_diff(ticks_ms(), start_ticks) > _led_light_on_milliseconds:
-            publish_message('Before turning light off. Current is {} mA.'.format(measure_uv_light_current()))
+            # publish_message('Before turning light off. Current is {} mA.'.format(measure_uv_light_current()))
             turn_off_uv_light()
             publish_message('Light is off. Current is {} mA.'.format(measure_uv_light_current()))
 
