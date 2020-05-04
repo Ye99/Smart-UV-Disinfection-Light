@@ -104,8 +104,8 @@ _reset_interval_milliseconds = const(60 * 1000)  # 30 minutes
 def periodically_reset() -> None:
     if ticks_diff(ticks_ms(), last_reset_tick) > _reset_interval_milliseconds:
         message = 'Periodically reset.'
-        print(message)
         publish_message(message)
+        print(message)
         reset()
         #  Don't need to record last_reset_tick here. Because after reset, code will do it.
 
@@ -149,7 +149,9 @@ while True:
             publish_message('Light is off. Current is {} mA.'.format(measure_uv_light_current()))
 
         measure_uv_light_current()
-
+        periodically_reset()
         sleep_ms(_loop_sleep_ms)
     except OSError as ex:
-        print('ERROR:', ex)
+        error_message = 'ERROR: {}'.format(ex)
+        publish_message(error_message)
+        print(error_message)
