@@ -76,6 +76,7 @@ def compute_average(values_list) -> float:
 def update_distance_average(new_measure) -> float:
     if len(_last_x_distance_values) > _track_distance_value_number:
         _last_x_distance_values.pop(0)
+
     _last_x_distance_values.append(new_measure)
     return compute_average(_last_x_distance_values)
 
@@ -84,21 +85,26 @@ def update_distance_average(new_measure) -> float:
 # See https://docs.micropython.org/en/latest/esp8266/tutorial/network_basics.html#configuration-of-the-wifi
 # ESP8266/32 persist WiFi configuration during power-off, and will reconnect automatically.
 def publish_message(message) -> None:  # message is in binary format
-    print('Publish message {0}'.format(message))
-    c = MQTTClient(client_id="smart_uv_light_umqtt_client",  # if username/pwd wrong, this will throw Exception
-                   server="192.168.1.194",  # don't catch "fail fast fail hard".
-                   user=b"mosquitto",
-                   password=b"mosquitto",
-                   ssl=False)
-    if 0 == c.connect():  # 0 is success.
-        c.publish(b"smart_uv_light_status_topic", message)
-        c.disconnect()
-    else:
-        print('Connect to MQTT server failed. ')
+    print('Publish message: {0}'.format(message))
+    try:
+        c = MQTTClient(client_id="smart_uv_light_umqtt_client",  # if username/pwd wrong, this will throw Exception
+                       server="192.168.1.194",
+                       user=b"mosquitto",
+                       password=b"mosquitto",
+                       ssl=False)
+        if 0 == c.connect():  # 0 is success.
+            c.publish(b"smart_uv_light_status_topic", message)
+            c.disconnect()
+        else:
+            print('Connect to MQTT server failed. ')
+    except OSError as exception:
+        # When machine is just booted, WiFi hasn't been connected yet. Immediately invoke MQTT will throw error.
+        # Instead of tracking startup grace period, just keep code simple by catching and log the error.
+        print('publish_message encountered error {}'.format(exception))
 
 
 last_reset_tick = ticks_ms()
-_reset_interval_milliseconds = const(60 * 1000 * 30)  # 30 minutes
+_reset_interval_milliseconds = const(60 * 1000 * 30 )  # 30 minutes
 
 
 def periodically_reset() -> None:
@@ -108,8 +114,8 @@ def periodically_reset() -> None:
     # print(message)
 
     if tick_ms_elapsed > _reset_interval_milliseconds:
-        print('reset...')
-        publish_message('reset...')  # Also works as heartbeat.
+        # free is in boot so it's available to REPL, for convenience. Import it to make this dependency explicit?
+        publish_message('Reset. Current memory usage is {}'.format(free()))  # Also works as heartbeat.
         sleep_ms(2000)
         reset()
         #  Don't need to record last_reset_tick here. Because after reset, code will do it.
@@ -158,5 +164,6 @@ while True:
         sleep_ms(_loop_sleep_ms)
     except OSError as ex:
         error_message = 'ERROR: {}'.format(ex)
+        # If function, invoked from here, raises exception, the loop can terminate.
         publish_message(error_message)
         print(error_message)
