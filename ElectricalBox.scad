@@ -25,16 +25,16 @@ height=41;  // [37:70]
 
 // Wall thickness in mm, add to width and height. Actuall wall (including cover) thickness is
 // half of this value. 
-wall_double_thickness = 3.5; // [1:4]
+wall_double_thickness=3.5; // [1:4]
 // outlet screw diameter (mm) for the holes at 2 ends
-outlet_screw_hole_diag = 3.4; // [3:6]
+outlet_screw_hole_diag=3.4; // [3:6]
 // the screw hole on box bottom tab, to secure the box.
-bottom_tab_screw_hole_diag = 4.5;
+bottom_tab_screw_hole_diag=5;
 // width of hole to run the input wires (mm)
 // This 14/2 wire width is 10, height is 5
-wires_hole_width = 11; // [8:12]
+wires_hole_width=11; // [8:12]
 // height of hole to run the input wires (mm)
-wires_hole_height = 6; // [4:12]
+wires_hole_height=6; // [4:12]
 // https://smile.amazon.com/gp/product/B000BPEQCC/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1
 
 // Program Section //
@@ -60,16 +60,16 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
 }
 
 // Inner space length.
-length = 105; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
-hole_depth = 35; // how far down is the screw hole in cylinder.
-support_cylinder_radius = outlet_screw_hole_diag*2+1;
+length=105; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
+outlet_screw_hole_depth=35; // how far down is the outlet screw hole in supporting cylinder.
+support_cylinder_radius=outlet_screw_hole_diag*2+1;
 
 // distance between supporting cylinder and box top
-cylinder_top_gap = 5.5-wall_double_thickness; // deduct cover thickness so the outlet will be flush.
+cylinder_top_gap=5.5-wall_double_thickness; // deduct cover thickness so the outlet will be flush.
 
 // outlet screw off set from edge. Change according to your measurement with caution!
 // My desin references x,y,z 0 (center), and thus changing wall thickness won't inerference screw_position.
-screw_posistion_from_edge = 10.5; // Outlet screw holes are 84mm apart. Must be precise!
+screw_posistion_from_edge=10.5; // Outlet screw holes are 84mm apart. Must be precise!
 
 module one_plug_hole() {
     difference(){
@@ -155,8 +155,8 @@ module outlet_screw_cylinder(length, ow_height, screw_pos) {
                 }
                     
                 // screw hole in the cylinder
-                translate([0, screw_pos, cylinder_height-hole_depth+1]) {
-                        cylinder(r=outlet_screw_hole_diag/2, h=hole_depth, $fn=50, center=false);
+                translate([0, screw_pos, cylinder_height-outlet_screw_hole_depth+1]) {
+                        cylinder(r=outlet_screw_hole_diag/2, h=outlet_screw_hole_depth, $fn=50, center=false);
             }
         }
 }
