@@ -4,9 +4,15 @@
 *  Description:  an electrical box with the dimension
 */
 
-/* Date: May 9, 2020
-   Added screw tab out of box; removed box bottom screw holes, which are blocked after outlet is installed; Removed two supporting cylinders; Refactored code to imporve maintainability etc. 
-   By: Ye Zhang (mr.yezhang@gmail.com)
+/* By: Ye Zhang (mr.yezhang@gmail.com)
+   Date: May 9, 2020
+    Added screw tab out of box; removed box bottom screw holes, which are blocked after outlet is installed; Removed two supporting cylinders; Refactored code to imporve maintainability etc. 
+   Date: May 10, 2020
+    Remove two holes from cover.
+    Enlarge screw holes.
+    Fine tune screw hole distance. 
+    Reduce box bottom tab thickness.
+    Moved screw holes on bottom tab further from box wall. Give more work space. 
 */
 
 // Choose, which part you want to see!
@@ -20,8 +26,10 @@ height=41;  // [37:70]
 // Wall thickness in mm, add to width and height. Actuall wall (including cover) thickness is
 // half of this value. 
 wall_double_thickness = 3.5; // [1:4]
-// screw diameter (mm) for the holes at 2 ends
-hole_diag = 3; // [3:6]
+// outlet screw diameter (mm) for the holes at 2 ends
+outlet_screw_hole_diag = 3.4; // [3:6]
+// the screw hole on box bottom tab, to secure the box.
+bottom_tab_screw_hole_diag = 4.5;
 // width of hole to run the input wires (mm)
 // This 14/2 wire width is 10, height is 5
 wires_hole_width = 11; // [8:12]
@@ -52,16 +60,16 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
 }
 
 // Inner space length.
-length = 105;
-hole_depth = 35; // how far down is the screw hole in cylinder
-support_cylinder_radius = hole_diag * 2 + 1;
+length = 105; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
+hole_depth = 35; // how far down is the screw hole in cylinder.
+support_cylinder_radius = outlet_screw_hole_diag*2+1;
 
 // distance between supporting cylinder and box top
 cylinder_top_gap = 5.5-wall_double_thickness; // deduct cover thickness so the outlet will be flush.
 
 // outlet screw off set from edge. Change according to your measurement with caution!
 // My desin references x,y,z 0 (center), and thus changing wall thickness won't inerference screw_position.
-screw_posistion_from_edge = 10;
+screw_posistion_from_edge = 10.5; // Outlet screw holes are 84mm apart. Must be precise!
 
 module one_plug_hole() {
     difference(){
@@ -89,17 +97,19 @@ module cover(width=width, length=length, height=height, screw_pos=screw_posistio
                     }
                     
                     // center hole. 4mm diameter.
-                    translate([height, 0, -3]) cylinder(r=2, h=20, $fn=50); 
-                    translate([height, 0, 3.5]) cylinder(r1=2, r2=3.3, h=3);            
+                    // printed holes tend to shrink, give it 5mm. 
+                    translate([height, 0, -3]) cylinder(r=2.5, h=20, $fn=50); 
+                    translate([height, 0, 3.5]) cylinder(r1=2.5, r2=3.3, h=3);            
                 }
 
+        /*
         // define holes at 2 ends
         translate([0, -length/2 + screw_pos, -wall_double_thickness]) 
-            /* make screw cross cover hole easy by adding 0.2 */
-            cylinder(r=hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60);
+            // make screw cross cover hole easy by adding 0.2
+            cylinder(r=outlet_screw_hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60);
         translate([0, length/2-screw_pos,-wall_double_thickness]) 
-            /* make screw cross cover hole easy by adding 0.2 */
-            cylinder(r=hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60);
+            // make screw cross cover hole easy by adding 0.2
+            cylinder(r=outlet_screw_hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60); */
     }
 }
 
@@ -133,20 +143,20 @@ module outlet_screw_cylinder(length, ow_height, screw_pos) {
                             r1=support_cylinder_radius, 
                             r2=support_cylinder_radius, $fn=60, center=false);
                 
-                translate([0, -support_cylinder_radius*1.5, ow_height/2+wall_double_thickness*2])
+                translate([0, -support_cylinder_radius*1.5, ow_height/2+wall_double_thickness]) // to make tab strong, its thickness equals to wall_double_thickness
                  {
                     scale([1, 1.5, 1])
                         // remove half of the outer cylinder                  
                         cube([support_cylinder_radius*2, support_cylinder_radius*2, 
-                              ow_height+2-wall_double_thickness], true);
+                              ow_height], true);
                     // screw hole in the outside cylinder tab
-                    translate([0, 5, -3])
-                        cylinder(r=hole_diag/1.5, h=ow_height*2, $fn=50, center=true);
+                    translate([0, 2, -3])
+                        cylinder(r=bottom_tab_screw_hole_diag/2, h=ow_height*2, $fn=50, center=true);
                 }
                     
                 // screw hole in the cylinder
                 translate([0, screw_pos, cylinder_height-hole_depth+1]) {
-                        cylinder(r=hole_diag/2, h=hole_depth, $fn=50, center=false);
+                        cylinder(r=outlet_screw_hole_diag/2, h=hole_depth, $fn=50, center=false);
             }
         }
 }
@@ -154,7 +164,7 @@ module outlet_screw_cylinder(length, ow_height, screw_pos) {
 module lengh_support(ow_width, ow_height, wall_double_thickness) {
     rotate([0,0,90]) 
         translate([0, -(ow_width/2)+wall_double_thickness/2, -ow_height/2])
-            scale([1, 0.8, 1]) // support_cylinder_radius x 0.8, leave more room for outlet body.
+            scale([1, 0.6, 1]) // support_cylinder_radius shrink widthwise, leave more room for outlet body.
                 difference(){
                     cylinder(ow_height, support_cylinder_radius, support_cylinder_radius, $fn=60);
                     translate([-support_cylinder_radius, -support_cylinder_radius*2-1, -1])
