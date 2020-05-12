@@ -53,14 +53,14 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
     box();
 
  // this put cover next to box
- translate([width+(wall_double_thickness*2), 0, wall_double_thickness/4 /*wall_double_thickness/2/2 puts the cover touch build surface*/])  
+ translate([width+(wall_double_thickness*2), 0, wall_double_thickness/2])
  // this displacement puts the cover on top
- // translate([0,0,(height+wall_double_thickness/2)+1])
+ // translate([0,0,(height+wall_double_thickness/2)+1]) rotate([0, 180, 0])
     cover();
 }
 
 // Inner space length.
-length=106; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
+length=106; // Note: if you change this, you must update screw_posistion_from_edge and the value at "why is this magic number?" accordingly.
 outlet_screw_hole_depth=35; // how far down is the outlet screw hole in supporting cylinder.
 support_cylinder_radius=outlet_screw_hole_diag*2+1;
 
@@ -71,21 +71,30 @@ cylinder_top_gap=5.5-wall_double_thickness; // deduct cover thickness so the out
 // My desin references x,y,z 0 (center), and thus changing wall thickness won't inerference screw_position.
 screw_posistion_from_edge=11; // Outlet screw holes are 84mm apart. Must be precise!
 
+// cover wall height in mm, not including cover thickness.
+cover_wall_height=3;
+
 module one_plug_hole() {
     difference(){
         cylinder(r=17.4625, h=15, center = true, $fn=50);
-        translate([-24.2875,-15,-2]) cube([10,37,15], center = false);
-        translate([14.2875,-15,-2]) cube([10,37,15], center = false);
+        translate([-24.2875,-15,-cover_wall_height*2]) cube([10,37,15], center=false);
+        translate([14.2875,-15,-cover_wall_height*2]) cube([10,37,15], center=false);
    }
 }
 
 module cover(width=width, length=length, height=height, screw_pos=screw_posistion_from_edge) {
-    difference() {
-        // define plate
-        cube([width + wall_double_thickness, length + wall_double_thickness, wall_double_thickness/2], center=true);
+    difference() {        
+       difference() {
+            // outside wall
+            cube([width + wall_double_thickness, length + wall_double_thickness, cover_wall_height+wall_double_thickness/2], center=true);
+            // inside wall
+            translate([0, 0, wall_double_thickness/2]) 
+                cube([width, length, cover_wall_height], center=true);
+        } 
+
 
         rotate([0,0,90]) 
-            translate([-length/2+11.5, 0, 0]) // why is this magic number?
+            translate([-length/2+12, 0, 0]) // why is this magic number?
                 union() {
                     translate([height+19.3915, 0, 0]) 
                     {
@@ -125,10 +134,10 @@ module box_walls(ow_width, ow_length, ow_height) {
                     cube([width, length, height], center=true);
             } 
         
-        // input wires hole on side wall
-       translate([ow_width/2, -(ow_length/4), -ow_height/4])
-            // cube's x, y, z parameters confirm to the overall axes, making reasoning simple. 
-            cube([wall_double_thickness*2, wires_hole_width, wires_hole_height], center=true);
+           // input wires hole on side wall
+           translate([ow_width/2, -(ow_length/4), -ow_height/4])
+                // cube's x, y, z parameters confirm to the overall axes, making reasoning simple. 
+                cube([wall_double_thickness*2, wires_hole_width, wires_hole_height], center=true);
     }
 }
 
