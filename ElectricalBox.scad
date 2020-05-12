@@ -60,7 +60,7 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
 }
 
 // Inner space length.
-length=105; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
+length=106; // Note: if you change this, you must update screw_posistion_from_edge accordingly.
 outlet_screw_hole_depth=35; // how far down is the outlet screw hole in supporting cylinder.
 support_cylinder_radius=outlet_screw_hole_diag*2+1;
 
@@ -69,7 +69,7 @@ cylinder_top_gap=5.5-wall_double_thickness; // deduct cover thickness so the out
 
 // outlet screw off set from edge. Change according to your measurement with caution!
 // My desin references x,y,z 0 (center), and thus changing wall thickness won't inerference screw_position.
-screw_posistion_from_edge=10.5; // Outlet screw holes are 84mm apart. Must be precise!
+screw_posistion_from_edge=11; // Outlet screw holes are 84mm apart. Must be precise!
 
 module one_plug_hole() {
     difference(){
