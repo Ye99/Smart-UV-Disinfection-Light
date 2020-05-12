@@ -15,6 +15,8 @@
     Moved screw holes on bottom tab further from box wall. Give more work space. 
 */
 
+use <roundedCube.scad>
+
 // Choose, which part you want to see!
 part = "all_parts__";  //[all_parts__:All Parts,bottom_part__:Bottom,top_part__:Top]
 
@@ -37,6 +39,9 @@ wires_hole_width=11; // [8:12]
 wires_hole_height=6; // [4:12]
 // https://smile.amazon.com/gp/product/B000BPEQCC/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1
 
+// radius for rounded corner
+rounded_corner_radius=2;
+
 // Program Section //
 if(part == "bottom_part__") {
     box();
@@ -53,7 +58,7 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
     box();
 
  // this put cover next to box
- translate([width+(wall_double_thickness*2), 0, wall_double_thickness/2])
+ translate([width+(wall_double_thickness*2), 0, (wall_double_thickness/2+cover_wall_height)/2])
  // this displacement puts the cover on top
  // translate([0,0,(height+wall_double_thickness/2)+1]) rotate([0, 180, 0])
     cover();
@@ -86,10 +91,10 @@ module cover(width=width, length=length, height=height, screw_pos=screw_posistio
     difference() {        
        difference() {
             // outside wall
-            cube([width + wall_double_thickness, length + wall_double_thickness, cover_wall_height+wall_double_thickness/2], center=true);
+            roundedCube([width + wall_double_thickness, length + wall_double_thickness, cover_wall_height+wall_double_thickness/2], center=true, r=rounded_corner_radius);
             // inside wall
             translate([0, 0, wall_double_thickness/2]) 
-                cube([width, length, cover_wall_height], center=true);
+                roundedCube([width, length, cover_wall_height], center=true, r=rounded_corner_radius);
         } 
 
 
@@ -128,10 +133,10 @@ module box_walls(ow_width, ow_length, ow_height) {
             // box walls
             difference() {
                 // outside wall
-                cube([ow_width, ow_length, ow_height],center=true);
+                roundedCube([ow_width, ow_length, ow_height],center=true, r=rounded_corner_radius);
                 // inside wall
                 translate([0, 0, wall_double_thickness/2]) 
-                    cube([width, length, height], center=true);
+                    roundedCube([width, length, height], center=true, r=rounded_corner_radius);
             } 
         
            // input wires hole on side wall
