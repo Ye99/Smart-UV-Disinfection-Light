@@ -42,6 +42,11 @@ wires_hole_height=6; // [4:12]
 // radius for rounded corner
 rounded_corner_radius=2;
 
+cover_alignment_tab_length=3;
+cover_alignment_tab_height=4;
+// the larger this value, the more cover free-play allowed.
+cover_alignment_tab_tolerance=0.2;
+
 // Program Section //
 if(part == "bottom_part__") {
     box();
@@ -58,9 +63,9 @@ translate([0, 0, (height+wall_double_thickness/2)/2])
     box();
 
  // this put cover next to box
- translate([width+(wall_double_thickness*2), 0, (wall_double_thickness/2+cover_wall_height)/2])
+ // translate([width+(wall_double_thickness*2), 0, (wall_double_thickness/2+cover_wall_height)/2])
  // this displacement puts the cover on top
- // translate([0,0,(height+wall_double_thickness/2)+1]) rotate([0, 180, 0])
+  translate([0,0,(height+wall_double_thickness/2)+1]) rotate([0, 180, 0])
     cover();
 }
 
@@ -87,43 +92,45 @@ module one_plug_hole() {
    }
 }
 
+module cover_alignment_tab() {
+    cube([wall_double_thickness/2, cover_alignment_tab_length, cover_alignment_tab_height], center=false);
+}
+
 module cover(width=width, length=length, height=height, screw_pos=screw_posistion_from_edge) {
-    difference() {        
-       difference() {
-            // outside wall
-            roundedCube([width + wall_double_thickness, length + wall_double_thickness, cover_wall_height+wall_double_thickness/2], center=true, r=rounded_corner_radius);
-            // inside wall
-            translate([0, 0, wall_double_thickness/2]) 
-                roundedCube([width, length, cover_wall_height], center=true, r=rounded_corner_radius);
-        } 
+    union() {
+        difference() {        
+           difference() {
+                // outside wall
+                roundedCube([width + wall_double_thickness, length + wall_double_thickness, cover_wall_height+wall_double_thickness/2], center=true, r=rounded_corner_radius);
+                // inside wall
+                translate([0, 0, wall_double_thickness/2]) 
+                    roundedCube([width, length, cover_wall_height], center=true, r=rounded_corner_radius);
+            } 
 
-
-        rotate([0,0,90]) 
-            translate([-length/2+12, 0, 0]) // why is this magic number?
-                union() {
-                    translate([height+19.3915, 0, 0]) 
-                    {
-                        one_plug_hole();
-                    }
-                
-                    translate([height-19.3915, 0, 0]){
-                        one_plug_hole();
-                    }
+            // Outlet opening and screw hole
+            rotate([0,0,90]) 
+                translate([-length/2+12, 0, 0]) // why is this magic number?
+                    union() {
+                        translate([height+19.3915, 0, 0]) 
+                        {
+                            one_plug_hole();
+                        }
                     
-                    // center hole. 4mm diameter.
-                    // printed holes tend to shrink, give it 5mm. 
-                    translate([height, 0, -3]) cylinder(r=2.5, h=20, $fn=50); 
-                    translate([height, 0, 3.5]) cylinder(r1=2.5, r2=3.3, h=3);            
-                }
-
-        /*
-        // define holes at 2 ends
-        translate([0, -length/2 + screw_pos, -wall_double_thickness]) 
-            // make screw cross cover hole easy by adding 0.2
-            cylinder(r=outlet_screw_hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60);
-        translate([0, length/2-screw_pos,-wall_double_thickness]) 
-            // make screw cross cover hole easy by adding 0.2
-            cylinder(r=outlet_screw_hole_diag/2 + 0.2, h=wall_double_thickness*2,$fn=60); */
+                        translate([height-19.3915, 0, 0]){
+                            one_plug_hole();
+                        }
+                        
+                        // center hole. 4mm diameter.
+                        // printed holes tend to shrink, give it 5mm. 
+                        translate([height, 0, -3]) cylinder(r=2.5, h=20, $fn=50); 
+                        translate([height, 0, 3.5]) cylinder(r1=2.5, r2=3.3, h=3);            
+                    }
+        }
+        
+        translate([-width/2+cover_alignment_tab_tolerance, length/3, 0]) 
+            cover_alignment_tab();
+        translate([-width/2+cover_alignment_tab_tolerance, -length/3, 0]) 
+            cover_alignment_tab();
     }
 }
 
